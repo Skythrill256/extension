@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/pebbling_logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pebbling - Professional Web Crawler</title>
+    <style>
+      /* Popup wrapper: let the popup auto-size to content and remove large empty areas */
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: auto;
+        box-sizing: border-box;
+        background: transparent;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      body {
+        /* small outer padding so content isn't flush to the edge */
+        padding: 8px;
+        width: 360px; /* popup width */
+        max-width: 420px;
+        overflow: visible;
+        display: flex;
+        align-items: flex-start; /* keep content at the top */
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      }
+
+      /* Let the React root size to its content */
+      #root {
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

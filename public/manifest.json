@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Pebbling",
+  "version": "0.0.1",
+  "description": "Pebbling – client-side web crawler",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "permissions": ["tabs"],
+  "host_permissions": [ "<all_urls>" ]
+  ,
+  "icons": {
+    "16": "pebbling_logo.png",
+    "48": "pebbling_logo.png",
+    "128": "pebbling_logo.png"
+  }
+}
