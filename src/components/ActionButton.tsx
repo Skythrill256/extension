@@ -16,10 +16,11 @@ export function ActionButton({
   loadingLabel = 'Loading…'
 }: ActionButtonProps) {
   const colorClasses = {
-  // make primary lighter by default (start button)
-  primary: 'gradient-yellow-light hover:gradient-yellow-deep focus:ring-yellow-500',
-  secondary: 'gradient-yellow-light hover:gradient-yellow-deep focus:ring-yellow-400',
-    danger: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:ring-red-500'
+  // primary: flat light yellow
+  primary: 'bg-yellow-100 hover:bg-yellow-200 focus:ring-yellow-500',
+  // secondary: slightly different flat yellow
+  secondary: 'bg-yellow-50 hover:bg-yellow-100 focus:ring-yellow-400',
+    danger: 'bg-red-500 hover:bg-red-600 focus:ring-red-500'
   };
 
   return (

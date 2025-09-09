@@ -17,18 +17,18 @@ export function CrawlResults({ results }: CrawlResultsProps) {
   return (
     <div className="card-modern rounded-xl p-3 animate-slide-in shadow-lg border border-gray-200/50">
       <div className="flex items-center space-x-2 mb-3">
-        <div className="p-1 gradient-yellow-soft rounded-lg shadow-sm" />
+  <div className="p-1 bg-yellow-100 rounded-lg shadow-sm" />
         <h2 className="font-bold text-black text-sm">Crawl Results</h2>
       </div>
       
       <div className="space-y-2">
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-2 rounded-lg shadow-sm">
+          <div className="bg-blue-50 border border-blue-200 p-2 rounded-lg shadow-sm">
             <div className="text-xs text-black font-medium mb-0.5">Total URLs</div>
             <div className="text-lg font-bold text-black">{results.urls.length}</div>
           </div>
-          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 p-2 rounded-lg shadow-sm">
+          <div className="bg-yellow-50 border border-yellow-200 p-2 rounded-lg shadow-sm">
             <div className="text-xs text-black font-medium mb-0.5">Characters</div>
             <div className="text-lg font-bold text-black">{results.totalCharacters.toLocaleString()}</div>
           </div>

@@ -229,15 +229,15 @@ export function MCPChatInterface({ url, onClose }: MCPChatInterfaceProps) {
 					<div className="text-[11px] text-gray-500">No tools discovered. Endpoint assumptions may be incorrect.</div>
 				)}
 				<div className="flex flex-wrap gap-1">
-					{tools?.map(t => (
-						<button
-							key={t.name}
-							onClick={() => setSelectedTool(t)}
-							className={`px-2 py-0.5 text-[11px] rounded-md border ${selectedTool?.name === t.name ? 'gradient-yellow-light text-black border-yellow-600/40' : 'bg-white text-gray-700 border-gray-300 hover:border-yellow-400'} shadow-sm`}
-						>
-							{t.title || t.name}
-						</button>
-					))}
+								{tools?.map(t => (
+									<button
+										key={t.name}
+										onClick={() => setSelectedTool(t)}
+										className={`px-2 py-0.5 text-[11px] rounded-md border ${selectedTool?.name === t.name ? 'bg-yellow-100 text-black border-yellow-600/40' : 'bg-white text-gray-700 border-gray-300 hover:border-yellow-400'} shadow-sm`}
+									>
+										{t.title || t.name}
+									</button>
+								))}
 				</div>
 				{selectedTool && (
 					<div className="mt-2 p-2 bg-white rounded-md border border-yellow-200">
@@ -260,13 +260,13 @@ export function MCPChatInterface({ url, onClose }: MCPChatInterfaceProps) {
 							disabled={running}
 						/>
 						<div className="flex justify-end mt-1">
-							<button
-								onClick={runTool}
-								disabled={running || !inputValue.trim()}
-								className="px-3 py-1 text-[11px] font-semibold gradient-yellow-light rounded-md border border-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								{running ? 'Running…' : 'Run'}
-							</button>
+												<button
+													onClick={runTool}
+													disabled={running || !inputValue.trim()}
+													className="px-3 py-1 text-[11px] font-semibold bg-yellow-100 hover:bg-yellow-200 rounded-md border border-yellow-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+												>
+													{running ? 'Running…' : 'Run'}
+												</button>
 						</div>
 					</div>
 				)}

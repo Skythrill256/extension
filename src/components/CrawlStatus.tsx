@@ -8,6 +8,7 @@ interface CrawlStatusProps {
     pagesScanned: number;
     totalPages: number;
     currentUrl: string;
+  estimatedMs?: number | null;
   };
   // optional latest scraped item to display a small text preview in the status panel
   latest?: {
@@ -72,21 +73,31 @@ export function CrawlStatus({ status }: CrawlStatusProps) {
   const getStatusColor = () => {
     switch (status.status) {
       case 'idle':
-        return 'border-yellow-200 bg-gradient-to-r from-yellow-50 to-yellow-100';
+        return 'border-yellow-200 bg-yellow-50';
       case 'crawling':
-  return 'border-yellow-200 bg-gradient-to-r from-yellow-50 to-yellow-100';
+  return 'border-yellow-200 bg-yellow-50';
       case 'paused':
-        return 'border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100';
+        return 'border-orange-200 bg-orange-50';
       case 'completed':
-  return 'border-yellow-200 bg-gradient-to-r from-yellow-50 to-yellow-100';
+  return 'border-yellow-200 bg-yellow-50';
       case 'error':
-        return 'border-red-200 bg-gradient-to-r from-red-50 to-red-100';
+        return 'border-red-200 bg-red-50';
       default:
-        return 'border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100';
+        return 'border-gray-200 bg-gray-50';
     }
   };
 
   const pct = status.totalPages > 0 ? (status.pagesScanned / status.totalPages) * 100 : 0;
+
+  const fmtMs = (ms?: number | null) => {
+    if (ms == null) return null;
+    if (ms <= 0) return '0s';
+    const s = Math.round(ms / 1000);
+    if (s < 60) return `${s}s`;
+    const m = Math.floor(s / 60);
+    const rs = s % 60;
+    return rs === 0 ? `${m}m` : `${m}m ${rs}s`;
+  };
 
   return (
     <div className={`${getStatusColor()} rounded-xl p-3 border animate-slide-in shadow-lg`}>
@@ -97,7 +108,7 @@ export function CrawlStatus({ status }: CrawlStatusProps) {
         <div>
           <h2 className="font-semibold text-black text-sm">{getStatusText()}</h2>
           {status.status === 'crawling' && (
-            <p className="text-xs text-gray-700">Discovering new pages...</p>
+            <p className="text-xs text-gray-700">Discovering new pages...{status.estimatedMs ? ` • est ${fmtMs(status.estimatedMs)} remaining` : ''}</p>
           )}
           {status.status === 'idle' && (
             <p className="text-xs text-gray-700 italic">{quotes[quoteIndex]}</p>

@@ -6,11 +6,12 @@ import { ServerUrlDisplay } from './components/ServerUrlDisplay';
 import { discoverCrawlUrlsForPage } from './utils/sitemap';
 import { scrapeMany, ScrapedDoc } from './utils/scraper';
 export default function App() {
-  const [crawlStatus, setCrawlStatus] = useState<{ status: 'idle' | 'crawling' | 'paused' | 'completed' | 'error'; pagesScanned: number; totalPages: number; currentUrl: string }>({
+  const [crawlStatus, setCrawlStatus] = useState<{ status: 'idle' | 'crawling' | 'paused' | 'completed' | 'error'; pagesScanned: number; totalPages: number; currentUrl: string; estimatedMs?: number | null }>({
     status: 'idle',
     pagesScanned: 0,
     totalPages: 0,
-    currentUrl: ''
+    currentUrl: '',
+    estimatedMs: null
   });
   const [crawlResults, setCrawlResults] = useState({
     urls: [] as string[],
@@ -39,7 +40,8 @@ export default function App() {
     try {
       // Discover sitemap URLs for the current active tab's origin
       const currentUrl = await getActiveTabUrl();
-      setCrawlStatus({ status: 'crawling', pagesScanned: 0, totalPages: 0, currentUrl: '' });
+  setCrawlStatus({ status: 'crawling', pagesScanned: 0, totalPages: 0, currentUrl: '', estimatedMs: null });
+  const crawlStart = Date.now();
       const urls = await discoverCrawlUrlsForPage(currentUrl);
       if (!urls.length) {
         setCrawlStatus({ status: 'error', pagesScanned: 0, totalPages: 0, currentUrl: '' });
@@ -53,8 +55,13 @@ export default function App() {
     const docs: ScrapedDoc[] = await scrapeMany(
         urls,
         hostname,
-        (u, done, total) => {
-          setCrawlStatus({ status: 'crawling', pagesScanned: done, totalPages: total, currentUrl: u });
+      (u, done, total) => {
+          // estimate remaining time based on average time per completed page
+          const elapsed = Date.now() - crawlStart;
+          const avg = done > 0 ? (elapsed / done) : 0;
+          const remaining = Math.max(0, total - done);
+          const estMs = remaining > 0 ? Math.round(remaining * avg) : 0;
+          setCrawlStatus({ status: 'crawling', pagesScanned: done, totalPages: total, currentUrl: u, estimatedMs: estMs });
         },
         (doc) => {
           tmpDocs.push(doc);
@@ -82,10 +89,10 @@ export default function App() {
         totalCharacters,
       });
   setDocs(docs);
-  setCrawlStatus(s => ({ ...s, status: 'completed', currentUrl: '' }));
+  setCrawlStatus(s => ({ ...s, status: 'completed', currentUrl: '', estimatedMs: 0 }));
   // latest state removed
     } catch (e) {
-      setCrawlStatus(s => ({ ...s, status: 'error' as const }));
+  setCrawlStatus(s => ({ ...s, status: 'error' as const, estimatedMs: null }));
     }
   }
   // Send scraped docs to local MCP server
@@ -109,8 +116,8 @@ export default function App() {
         body: JSON.stringify(payload)
       });
       const json = await resp.json();
-      const url = json?.mcp?.http_url || '';
-      if (url) setServerUrl(url);
+          const url = json?.mcp?.http_url || '';
+          if (url) setServerUrl(url);
     } catch (e) {
       // swallow and keep UI unchanged; could add console log for diagnostics
       console.error('Failed to send to MCP server', e);
@@ -124,9 +131,8 @@ export default function App() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
         <img src="/pebbling_logo.png" alt="Pebbling Logo" className="w-6 h-6 mr-2" />
-        <div className="flex flex-col">
+          <div className="flex flex-col">
           <h1 className="text-xl font-bold text-black">Pebbling</h1>
-          <span className="text-xs text-gray-600 ml-3 italic" style={{ fontFamily: 'cursive' }}>Lets pebble</span>
         </div>
           </div>
           <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
@@ -141,7 +147,23 @@ export default function App() {
             {crawlStatus.status === 'idle' && <ActionButton label="Start Crawling" onClick={startCrawling} color="primary" />}
             {crawlStatus.status === 'completed' && !serverUrl && <ActionButton label="Send to MCP Server" loading={sending} loadingLabel="Sending…" onClick={sendToServer} color="secondary" />}
           </div>
-          {serverUrl && <ServerUrlDisplay url={serverUrl} />}
+          {serverUrl && (
+            <ServerUrlDisplay
+              url={serverUrl}
+              siteMeta={{
+                siteUrl: docs[0]?.url || '',
+                title: docs[0]?.title || (docs[0]?.url ? new URL(docs[0].url).hostname : 'site'),
+                description: docs[0]?.description || '',
+                favicon: (() => {
+                  try {
+                    if (!docs[0]?.url) return '';
+                    const u = new URL(docs[0].url);
+                    return `${u.origin}/favicon.ico`;
+                  } catch { return ''; }
+                })()
+              }}
+            />
+          )}
         </div>
       </div>
     </div>;
