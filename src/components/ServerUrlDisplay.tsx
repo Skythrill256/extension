@@ -15,6 +15,14 @@ export function ServerUrlDisplay({ url, siteMeta }: ServerUrlDisplayProps) {
   const [deploying, setDeploying] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [deployMessage, setDeployMessage] = useState<string | null>(null);
+  const [creatingAgent, setCreatingAgent] = useState(false);
+  const [agentUrl, setAgentUrl] = useState<string | null>(null);
+  const [agentMessage, setAgentMessage] = useState<string | null>(null);
+  const [showAgentChat, setShowAgentChat] = useState(false);
+  const [agentChatInput, setAgentChatInput] = useState('');
+  const [agentChatLoading, setAgentChatLoading] = useState(false);
+  const [agentChatContent, setAgentChatContent] = useState<string | null>(null);
+  const [agentChatError, setAgentChatError] = useState<string | null>(null);
 
   const deployToHibiscus = async () => {
     if (deploying) return;
@@ -86,6 +94,56 @@ export function ServerUrlDisplay({ url, siteMeta }: ServerUrlDisplayProps) {
     }
   };
 
+  const createAgent = async () => {
+    if (creatingAgent) return;
+    setAgentMessage(null);
+    try {
+      setCreatingAgent(true);
+      const resp = await fetch('http://localhost:7000/set_mcp_url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json().catch(() => ({}));
+      if (json?.url) {
+        setAgentUrl(json.url as string);
+        setAgentMessage(json.message || 'Agent created');
+      } else {
+        setAgentMessage('Agent creation response received');
+      }
+    } catch (e) {
+      console.error('Agent creation failed', e);
+      setAgentMessage('Agent creation failed');
+    } finally {
+      setCreatingAgent(false);
+    }
+  };
+
+  const sendAgentChat = async () => {
+    if (!agentUrl || !agentChatInput.trim() || agentChatLoading) return;
+    setAgentChatLoading(true);
+    setAgentChatContent(null);
+    setAgentChatError(null);
+    try {
+      const endpoint = agentUrl.replace(/\/$/, '') + '/chat';
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: agentChatInput.trim() })
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json().catch(() => ({}));
+      const content = json?.response?.content || json?.content || '';
+      setAgentChatContent(content || '(No content in response)');
+    } catch (e) {
+      console.error('Agent chat failed', e);
+      setAgentChatError('Failed to get response from agent');
+    } finally {
+      setAgentChatLoading(false);
+    }
+  };
+
   return (
     <div className="card-modern rounded-xl p-3 animate-slide-in shadow-lg border border-yellow-200/50">
   <div className="flex items-center space-x-2 mb-3">
@@ -96,23 +154,32 @@ export function ServerUrlDisplay({ url, siteMeta }: ServerUrlDisplayProps) {
       </div>
       
   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-2 shadow-sm">
-        <div className="text-xs text-black font-semibold mb-1">Server URL:</div>
-        <div className="flex items-center gap-1 w-full flex-wrap">
+        <div className="text-xs text-black font-semibold mb-1">MCP Server URL:</div>
+        <div className="flex flex-col gap-2 w-full">
           <input
             type="text"
             value={url}
             readOnly
-            className="flex-1 min-w-0 bg-white border border-yellow-300 rounded px-2 py-1 text-xs text-black font-mono shadow-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 truncate"
+            className="w-full bg-white border border-yellow-300 rounded px-2 py-1 text-xs text-black font-mono shadow-sm focus:outline-none focus:ring-1 focus:ring-yellow-500 truncate"
           />
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 flex-wrap">
             <button
               onClick={deployToHibiscus}
               disabled={deploying}
-              className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold bg-yellow-100 text-black rounded-md shadow-sm border border-yellow-500/20 hover:bg-yellow-200 transition-colors"
+              className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold bg-yellow-100 text-black rounded-md shadow-sm border border-yellow-500/20 hover:bg-yellow-200 transition-colors disabled:opacity-60"
               title="Deploy to Hibiscus"
             >
               <span aria-hidden className="text-xs">🌺</span>
               <span>{deploying ? 'Deploying…' : 'Deploy'}</span>
+            </button>
+            <button
+              onClick={createAgent}
+              disabled={creatingAgent || !!agentUrl}
+              className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold bg-blue-100 text-black rounded-md shadow-sm border border-blue-500/20 hover:bg-blue-200 transition-colors disabled:opacity-60"
+              title="Create Agent"
+            >
+              <span aria-hidden className="text-xs">🤖</span>
+              <span>{creatingAgent ? 'Creating…' : agentUrl ? 'Agent Ready' : 'Create Agent'}</span>
             </button>
             <button
               onClick={() => setShowChat(s => !s)}
@@ -120,11 +187,66 @@ export function ServerUrlDisplay({ url, siteMeta }: ServerUrlDisplayProps) {
               title="Open MCP Chat"
             >
               <span aria-hidden className="text-xs">💬</span>
-              <span>{showChat ? 'Close' : 'Chat'}</span>
+              <span>{showChat ? 'Close' : 'Chat MCP'}</span>
             </button>
+            {agentUrl && (
+              <button
+                onClick={() => setShowAgentChat(s => !s)}
+                className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded-md shadow-sm border transition-colors ${showAgentChat ? 'bg-blue-100 text-black border-blue-500/40' : 'bg-white text-gray-700 border-blue-400/40 hover:border-blue-500/60'}`}
+                title="Chat with Agent"
+              >
+                <span aria-hidden className="text-xs">🗨️</span>
+                <span>{showAgentChat ? 'Close Agent Chat' : 'Chat Agent'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+      {agentUrl && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2 shadow-sm animate-fade-in">
+          <div className="text-xs text-black font-semibold mb-1">Agent URL:</div>
+          <div className="flex items-center gap-1 w-full flex-wrap">
+            <input
+              type="text"
+              value={agentUrl}
+              readOnly
+              className="flex-1 min-w-0 bg-white border border-blue-300 rounded px-2 py-1 text-xs text-black font-mono shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 truncate"
+            />
+            <button
+              onClick={() => navigator.clipboard.writeText(agentUrl)}
+              className="px-2 py-0.5 text-[10px] font-semibold bg-white text-gray-700 rounded-md shadow-sm border border-blue-400/40 hover:border-blue-500/60"
+            >Copy</button>
+          </div>
+          {agentMessage && (
+            <div className="mt-1 text-[10px] text-black">{agentMessage}</div>
+          )}
+          {showAgentChat && (
+            <div className="mt-2 bg-white border border-blue-200 rounded p-2 space-y-2">
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  placeholder="Ask the agent..."
+                  value={agentChatInput}
+                  onChange={e => setAgentChatInput(e.target.value)}
+                  className="flex-1 bg-white border border-blue-300 rounded px-2 py-1 text-xs text-black focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendAgentChat(); } }}
+                />
+                <button
+                  onClick={sendAgentChat}
+                  disabled={agentChatLoading || !agentChatInput.trim()}
+                  className="px-2 py-1 text-[10px] font-semibold bg-blue-100 text-black rounded-md shadow-sm border border-blue-400/40 hover:border-blue-500/60 disabled:opacity-50"
+                >{agentChatLoading ? 'Sending…' : 'Send'}</button>
+              </div>
+              <div className="min-h-[40px] max-h-40 overflow-auto text-[11px] whitespace-pre-wrap font-mono bg-blue-50 border border-blue-100 rounded p-2">
+                {agentChatLoading && <span className="italic text-gray-600">Thinking…</span>}
+                {!agentChatLoading && agentChatContent && <span>{agentChatContent}</span>}
+                {!agentChatLoading && agentChatError && <span className="text-red-600">{agentChatError}</span>}
+                {!agentChatLoading && !agentChatContent && !agentChatError && <span className="text-gray-500">Enter a prompt to begin.</span>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       
       <div className="bg-white rounded-lg p-2 shadow-sm border border-gray-200">
         <p className="text-xs text-black text-center leading-relaxed">
@@ -133,6 +255,9 @@ export function ServerUrlDisplay({ url, siteMeta }: ServerUrlDisplayProps) {
       </div>
       {deployMessage && (
         <div className="mt-2 text-center text-[11px] font-medium text-black bg-blue-50 border border-blue-200 rounded px-2 py-1">{deployMessage}</div>
+      )}
+      {agentMessage && !agentUrl && (
+        <div className="mt-2 text-center text-[11px] font-medium text-black bg-blue-50 border border-blue-200 rounded px-2 py-1">{agentMessage}</div>
       )}
       {showChat && <MCPChatInterface url={url} onClose={() => setShowChat(false)} />}
     </div>
